@@ -51,56 +51,6 @@ class ImageTransform(object):
     def __call__(self, img, phase='train'):
         return self.data_trasnform[phase](img)
 
-class BirdDataset(data.Dataset):
-    """
-    鳥のDataseクラス。
-    PyTorchのDatasetクラスを継承させる。
-    
-    Attrbutes
-    ---------
-    file_list: list
-        画像のファイルパスを格納したリスト
-    classes: list
-        鳥の特徴のラベル名
-    transform: object
-        前処理クラスのインスタンス
-    phase: 'train' or 'valid'
-        学習か検証化を設定
-    """
-    def __init__(self, file_list, classes, transform=None, phase='train'):
-        self.file_list = file_list
-        self.transform = transform
-        self.classes = classes
-        self.phase = phase
-    
-    def __len__(self):
-        """
-        画像の枚数を返す
-        """
-        return len(self.file_list)
-    
-    def __getname__(self, index):
-        return self.file_list[index]
-    
-    def __getitem__(self, index):
-        """
-        前処理した画像データのTensor形式のデータとラベルを取得
-        """
-        # 指定したindexの画像を読み込む
-        img_path = self.file_list[index]
-        img = Image.open(img_path)
-        
-        # 画像の前処理を実施
-        img_transformed = self.transform(img, self.phase)
-        
-        # 画像ラベルをファイル名から抜き出す
-        label = self.file_list[index].split('/')[2]
-        
-        # ラベル名を数値に変換
-        label = self.classes.index(label)
-        
-        return img_transformed, label
-
 #---------------モデルの読み込み---------------#
 
 # 学習済みモデルの読み込み
@@ -115,6 +65,12 @@ print(device)
 net = model_ft.to(device)
 net.eval()
 
+# リサイズ先の画像サイズ
+resize = 300
+# 今回は簡易的に(0.5, 0.5, 0.5)で標準化
+mean = (0.5, 0.5, 0.5)
+std = (0.5, 0.5, 0.5)
+
 #---------------評価---------------#
 folder = '../03_testset/01_kawaii/'#可愛い鳥のテストセット
 #folder = '../03_testset/02_kakkoii/'#かっこいい鳥のテストセット
@@ -123,11 +79,6 @@ for item in files:
     print(item)
     time.sleep(1)
     img = Image.open(item)
-    # リサイズ先の画像サイズ
-    resize = 300
-    # 今回は簡易的に(0.5, 0.5, 0.5)で標準化
-    mean = (0.5, 0.5, 0.5)
-    std = (0.5, 0.5, 0.5)
 
     transform = ImageTransform(resize, mean, std)
     img_transformed = transform(img, 'valid').unsqueeze(0)#次元を追加。batch化の代わり
